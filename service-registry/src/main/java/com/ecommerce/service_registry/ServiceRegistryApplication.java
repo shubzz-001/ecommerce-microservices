@@ -1,4 +1,4 @@
-package com.shubham.service_registry;
+package com.ecommerce.service_registry;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
