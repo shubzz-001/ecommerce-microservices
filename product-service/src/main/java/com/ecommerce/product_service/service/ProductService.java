@@ -1,11 +1,12 @@
 package com.ecommerce.product_service.service;
 
+import com.ecommerce.product_service.dto.ProductRequest;
+import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.repository.ProductRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -49,9 +50,19 @@ public class ProductService {
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<String> addProduct(Product product) {
+    public ResponseEntity<String> addProduct(ProductRequest productRequest) {
         try {
-            productRepository.save(product);
+
+            Product product = Product.builder()
+                    .name(productRequest.name())
+                    .description(productRequest.description())
+                    .price(productRequest.price())
+                    .stock(productRequest.stock())
+                    .build();
+
+            Product savedProduct = productRepository.save(product);
+
+
             return new ResponseEntity<>("Product added Successfully" , HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
@@ -59,7 +70,7 @@ public class ProductService {
         return new ResponseEntity<>("Failed to add Product", HttpStatus.BAD_REQUEST)    ;
     }
 
-    public ResponseEntity<String> updateProduct(Product product) {
+    public ResponseEntity<String> updateProduct(Long id, Product product) {
         try {
             productRepository.save(product);
             return new ResponseEntity<>("Product updated Successfully" , HttpStatus.OK);
