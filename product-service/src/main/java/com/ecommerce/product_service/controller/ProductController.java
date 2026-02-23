@@ -20,22 +20,22 @@ public class ProductController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         return productService.getProductById(id);
     }
 
     @GetMapping("/{productName}")
-    public ResponseEntity<Product> getProductByName(@PathVariable String productName) {
+    public ResponseEntity<ProductResponse> getProductByName(@PathVariable String productName) {
         return productService.getProductByName(productName);
     }
 
     @PostMapping("/product")
-    public ResponseEntity<String> addProduct(@RequestBody ProductRequest productRequest) {
+    public ResponseEntity<ProductResponse> addProduct(@RequestBody ProductRequest productRequest) {
         return productService.addProduct(productRequest);
     }
 

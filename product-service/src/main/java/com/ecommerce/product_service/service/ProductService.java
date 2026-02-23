@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,38 +21,69 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
         try {
+
             List<Product> products = productRepository.findAll();
-            return new ResponseEntity<>(products, HttpStatus.OK);
+            List<ProductResponse> responses = new ArrayList<>();
+
+            for (Product product : products) {
+                ProductResponse response = new ProductResponse(
+                        product.getId(),
+                        product.getName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getStock()
+                );
+                responses.add(response);
+            }
+            return new ResponseEntity<>(responses, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    public ResponseEntity<Product> getProductById(Long id) {
+    public ResponseEntity<ProductResponse> getProductById(Long id) {
         try {
+
             Product product = productRepository.findById(id).get();
-            return new ResponseEntity<>(product, HttpStatus.OK);
+            ProductResponse response = new ProductResponse(
+                    product.getId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    product.getStock()
+            );
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<Product> getProductByName(String productName) {
+    public ResponseEntity<ProductResponse> getProductByName(String productName) {
         try {
+
             Product product = productRepository.findByName(productName);
-            return new ResponseEntity<>(product, HttpStatus.OK);
+            ProductResponse response = new ProductResponse(
+                    product.getId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    product.getStock()
+            );
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
-    public ResponseEntity<String> addProduct(ProductRequest productRequest) {
+    public ResponseEntity<ProductResponse> addProduct(ProductRequest productRequest) {
         try {
 
             Product product = Product.builder()
@@ -62,12 +95,19 @@ public class ProductService {
 
             Product savedProduct = productRepository.save(product);
 
+            ProductResponse response = new ProductResponse(
+                    savedProduct.getId(),
+                    savedProduct.getName(),
+                    savedProduct.getDescription(),
+                    savedProduct.getPrice(),
+                    savedProduct.getStock()
+            );
 
-            return new ResponseEntity<>("Product added Successfully" , HttpStatus.CREATED);
+            return new ResponseEntity<>(response , HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new ResponseEntity<>("Failed to add Product", HttpStatus.BAD_REQUEST)    ;
+        return new ResponseEntity<>(new ProductResponse(0L,"","", BigDecimal.ZERO,-1), HttpStatus.BAD_REQUEST)    ;
     }
 
     public ResponseEntity<String> updateProduct(Long id, Product product) {
@@ -83,7 +123,7 @@ public class ProductService {
     public ResponseEntity<String> deleteProductById(Long id) {
         try {
             productRepository.deleteById(id);
-            return new ResponseEntity<>("Product deleted Successfully" , HttpStatus.OK);
+            return new ResponseEntity<>("Product deleted Successfully" , HttpStatus.NO_CONTENT);
         } catch ( Exception e) {
             e.printStackTrace();
         }
