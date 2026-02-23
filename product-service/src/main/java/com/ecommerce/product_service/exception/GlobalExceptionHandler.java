@@ -1,6 +1,8 @@
 package com.ecommerce.product_service.exception;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,6 +29,15 @@ public class GlobalExceptionHandler {
                         errors.put(error.getField(), error.getDefaultMessage()));
 
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<String> handleOptimisticLocking(
+        ObjectOptimisticLockingFailureException ex
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body("Optimistic locking conflict occurred. Please retry the operation.");
     }
 
 }

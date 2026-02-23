@@ -2,7 +2,6 @@ package com.ecommerce.product_service.controller;
 
 import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
-import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
