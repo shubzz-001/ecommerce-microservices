@@ -30,4 +30,7 @@ public class Product {
 
     @Column(nullable = false)
     private Integer stock;
+
+    @Version
+    private Long version;
 }

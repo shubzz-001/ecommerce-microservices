@@ -4,6 +4,7 @@ import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,34 +22,12 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        try {
+    public List<ProductResponse> getAllProducts() {
 
-            List<Product> products = productRepository.findAll();
-            List<ProductResponse> responses = new ArrayList<>();
+        List<Product> products = productRepository.findAll();
+        List<ProductResponse> responses = new ArrayList<>();
 
-            for (Product product : products) {
-                ProductResponse response = new ProductResponse(
-                        product.getId(),
-                        product.getName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getStock()
-                );
-                responses.add(response);
-            }
-            return new ResponseEntity<>(responses, HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    public ResponseEntity<ProductResponse> getProductById(Long id) {
-        try {
-
-            Product product = productRepository.findById(id).get();
+        for (Product product : products) {
             ProductResponse response = new ProductResponse(
                     product.getId(),
                     product.getName(),
@@ -56,77 +35,94 @@ public class ProductService {
                     product.getPrice(),
                     product.getStock()
             );
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
+            responses.add(response);
         }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return responses;
     }
 
-    public ResponseEntity<ProductResponse> getProductByName(String productName) {
-        try {
+    public ProductResponse getProductById(Long id) {
 
-            Product product = productRepository.findByName(productName);
-            ProductResponse response = new ProductResponse(
-                    product.getId(),
-                    product.getName(),
-                    product.getDescription(),
-                    product.getPrice(),
-                    product.getStock()
-            );
+        Product product = productRepository.findById(id).get();
+        ProductResponse response = new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock()
+        );
 
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        return response;
+
     }
 
-    public ResponseEntity<ProductResponse> addProduct(ProductRequest productRequest) {
-        try {
+    public ProductResponse getProductByName(String productName) {
 
-            Product product = Product.builder()
-                    .name(productRequest.name())
-                    .description(productRequest.description())
-                    .price(productRequest.price())
-                    .stock(productRequest.stock())
-                    .build();
 
-            Product savedProduct = productRepository.save(product);
+        Product product = productRepository.findByName(productName);
+        ProductResponse response = new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock()
+        );
 
-            ProductResponse response = new ProductResponse(
-                    savedProduct.getId(),
-                    savedProduct.getName(),
-                    savedProduct.getDescription(),
-                    savedProduct.getPrice(),
-                    savedProduct.getStock()
-            );
+        return response;
 
-            return new ResponseEntity<>(response , HttpStatus.CREATED);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new ResponseEntity<>(new ProductResponse(0L,"","", BigDecimal.ZERO,-1), HttpStatus.BAD_REQUEST)    ;
     }
 
-    public ResponseEntity<String> updateProduct(Long id, Product product) {
-        try {
-            productRepository.save(product);
-            return new ResponseEntity<>("Product updated Successfully" , HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new ResponseEntity<>("Failed to update Product", HttpStatus.BAD_REQUEST);
+    public ProductResponse addProduct(ProductRequest productRequest) {
+
+        Product product = Product.builder()
+                .name(productRequest.name())
+                .description(productRequest.description())
+                .price(productRequest.price())
+                .stock(productRequest.stock())
+                .build();
+
+        Product savedProduct = productRepository.save(product);
+
+        ProductResponse response = new ProductResponse(
+                savedProduct.getId(),
+                savedProduct.getName(),
+                savedProduct.getDescription(),
+                savedProduct.getPrice(),
+                savedProduct.getStock()
+        );
+
+        return response;
+
     }
 
-    public ResponseEntity<String> deleteProductById(Long id) {
-        try {
-            productRepository.deleteById(id);
-            return new ResponseEntity<>("Product deleted Successfully" , HttpStatus.NO_CONTENT);
-        } catch ( Exception e) {
-            e.printStackTrace();
+    public String updateProduct(Long id, ProductRequest productRequest) {
+
+
+        Product product = productRepository.findById(id).get();
+        product = Product.builder()
+                .name(productRequest.name())
+                .description(productRequest.description())
+                .price(productRequest.price())
+                .stock(productRequest.stock())
+                .build();
+
+        productRepository.save(product);
+        return "Product updated Successfully";
+    }
+
+    public String deleteProductById(Long id) {
+        productRepository.deleteById(id);
+        return "Product deleted Successfully";
+
+    }
+
+    @Transactional
+    public void reduceStock(Long id, int quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("Insufficient stock");
         }
-        return new ResponseEntity<>("Failed to delete Product", HttpStatus.BAD_REQUEST);
+        product.setStock(product.getStock() - quantity);
     }
 }
