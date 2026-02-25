@@ -5,11 +5,14 @@ import com.ecommerce.order_service.dto.OrderRequest;
 import com.ecommerce.order_service.dto.OrderResponse;
 import com.ecommerce.order_service.dto.ProductResponse;
 import com.ecommerce.order_service.model.Order;
+import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductClient productClient;
 
+    @Transactional
     public OrderResponse createOrder(OrderRequest request) {
 
         ProductResponse product = productClient.getProduct(request.productId());
@@ -35,16 +39,18 @@ public class OrderService {
                 .productId(request.productId())
                 .quantity(request.quantity())
                 .totalPrice(total)
-                .status("CREATED")
+                .status(OrderStatus.CREATED)
+                .createdAt(LocalDateTime.now())
                 .build();
-
         Order saved = orderRepository.save(order);
+
         return new OrderResponse(
                 saved.getId(),
                 saved.getProductId(),
                 saved.getQuantity(),
                 saved.getTotalPrice(),
-                saved.getStatus()
+                saved.getStatus(),
+                saved.getCreatedAt()
         );
     }
 
