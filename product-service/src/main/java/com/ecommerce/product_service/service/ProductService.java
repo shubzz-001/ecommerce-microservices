@@ -2,6 +2,7 @@ package com.ecommerce.product_service.service;
 
 import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
+import com.ecommerce.product_service.exception.ProductNotFoundException;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.repository.ProductRepository;
 import jakarta.transaction.Transactional;
@@ -115,7 +116,7 @@ public class ProductService {
     @Transactional
     public void reduceStock(Long id, int quantity) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id " + id));
 
         if (product.getStock() < quantity) {
             throw new RuntimeException("Insufficient stock");

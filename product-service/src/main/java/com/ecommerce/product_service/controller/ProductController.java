@@ -29,7 +29,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @GetMapping("/{productName}")
+    @GetMapping("name/{productName}")
     public ResponseEntity<ProductResponse> getProductByName(@PathVariable String productName) {
         return ResponseEntity.ok(productService.getProductByName(productName));
     }

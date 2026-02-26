@@ -40,4 +40,13 @@ public class GlobalExceptionHandler {
             .body("Optimistic locking conflict occurred. Please retry the operation.");
     }
 
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<String> handleProductNotFound(
+            ProductNotFoundException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
 }
