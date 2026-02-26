@@ -1,5 +1,6 @@
 package com.ecommerce.order_service.exception;
 
+import feign.FeignException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -38,6 +39,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body("Optimistic locking conflict occurred. Please retry the operation.");
+    }
+
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<String> handleFeignException(FeignException ex) {
+
+        if (ex.status() == 404) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Product not found");
+        }
+
+        if (ex.status() == 400) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid request to product service");
+        }
+
+        if (ex.status() == 503) {
+            return ResponseEntity
+                    .status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("Product service unavailable");
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error communicating with product service");
     }
 
 }
