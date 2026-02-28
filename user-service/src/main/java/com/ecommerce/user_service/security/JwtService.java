@@ -1,27 +1,52 @@
 package com.ecommerce.user_service.security;
 
+import com.ecommerce.user_service.dto.AuthResponse;
+import com.ecommerce.user_service.dto.LoginRequest;
+import com.ecommerce.user_service.dto.RegisterRequest;
+import com.ecommerce.user_service.model.Role;
 import com.ecommerce.user_service.model.User;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import com.ecommerce.user_service.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Date;
 
 @Service
 public class JwtService {
 
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    private final String SECRET = "THIS_IS_SECRET_KEY_FOR_THIS_PROJECT_DONT_STORE_LIKE_THIS_BUDD";
-
-    private String generateToken(User user) {
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("role", user.getRole().name())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*60))
-                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()), SignatureAlgorithm.HS256)
-                .compact();
+    public JwtService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = new JwtUtil();
     }
 
+    public void register(RegisterRequest request) {
+
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new RuntimeException("Email Already Exists");
+        }
+
+        User user = User.builder()
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
+                .role(Role.USER)
+                .build();
+
+        userRepository.save(user);
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("Email Not Found"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new RuntimeException("Password Do Not Match");
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        return new AuthResponse(request.email(), token);
+    }
 }
