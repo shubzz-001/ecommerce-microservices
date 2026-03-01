@@ -1,52 +1,67 @@
 package com.ecommerce.user_service.security;
 
-import com.ecommerce.user_service.dto.AuthResponse;
-import com.ecommerce.user_service.dto.LoginRequest;
-import com.ecommerce.user_service.dto.RegisterRequest;
-import com.ecommerce.user_service.model.Role;
 import com.ecommerce.user_service.model.User;
-import com.ecommerce.user_service.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    @Value("${jwt.secret}")
+    private String SECRET;
 
-    public JwtService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = new JwtUtil();
+    public JwtService() {
+        this.SECRET = generateSecretKey();
     }
 
-    public void register(RegisterRequest request) {
-
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new RuntimeException("Email Already Exists");
+    public String generateSecretKey() {
+        try {
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
+            SecretKey secretKey = keyGenerator.generateKey();
+            System.out.println("Secret key: " + secretKey.toString());
+            return Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Error in creating HmacSHA256 key generator",e);
         }
-
-        User user = User.builder()
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(Role.USER)
-                .build();
-
-        userRepository.save(user);
     }
 
-    public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Email Not Found"));
+    public String generateToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("role", user.getRole().name())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*60))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()), SignatureAlgorithm.HS256)
+                .compact();
+    }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Password Do Not Match");
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            return false;
         }
-
-        String token = jwtUtil.generateToken(user);
-
-        return new AuthResponse(request.email(), token);
     }
+
+    public String extractEmail(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .build()
+                .parseClaimsJws(token).getBody().getSubject();
+    }
+
 }

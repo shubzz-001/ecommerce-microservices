@@ -19,11 +19,11 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
 
-    public JwtFilter(UserRepository userRepository, JwtUtil jwtUtil) {
+    public JwtFilter(UserRepository userRepository, JwtService jwtService) {
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -38,9 +38,9 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            if (jwtUtil.validateToken(token)) {
+            if (jwtService.validateToken(token)) {
 
-                String email = jwtUtil.extractEmail(token);
+                String email = jwtService.extractEmail(token);
                 User user = userRepository.findByEmail(email).orElse(null);
 
                 if (user != null) {
