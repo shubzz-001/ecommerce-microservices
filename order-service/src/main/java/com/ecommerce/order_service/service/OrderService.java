@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -54,4 +56,22 @@ public class OrderService {
         );
     }
 
+    public List<OrderResponse> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+        List<OrderResponse> orderResponses = new ArrayList<>();
+
+        for (Order order : orders) {
+            OrderResponse orderResponse = new OrderResponse(
+                    order.getId(),
+                    order.getProductId(),
+                    order.getQuantity(),
+                    order.getTotalPrice(),
+                    order.getStatus(),
+                    order.getCreatedAt()
+            );
+            orderResponses.add(orderResponse);
+        }
+
+        return orderResponses;
+    }
 }

@@ -1,6 +1,7 @@
 package com.ecommerce.user_service.service;
 
 import com.ecommerce.user_service.dto.UserDTO;
+import com.ecommerce.user_service.exception.UserNotFoundException;
 import com.ecommerce.user_service.model.User;
 import com.ecommerce.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class UserService {
 
     public UserDTO getUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         UserDTO userDTO = new UserDTO(
                 user.getId(),
@@ -51,7 +52,7 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         return new UserDTO(
                 user.getId(),

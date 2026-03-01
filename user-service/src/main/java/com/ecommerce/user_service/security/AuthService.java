@@ -3,6 +3,8 @@ package com.ecommerce.user_service.security;
 import com.ecommerce.user_service.dto.AuthResponse;
 import com.ecommerce.user_service.dto.LoginRequest;
 import com.ecommerce.user_service.dto.RegisterRequest;
+import com.ecommerce.user_service.exception.EmailAlreadyExistsException;
+import com.ecommerce.user_service.exception.InvalidCredentialsException;
 import com.ecommerce.user_service.model.Role;
 import com.ecommerce.user_service.model.User;
 import com.ecommerce.user_service.repository.UserRepository;
@@ -25,7 +27,7 @@ public class AuthService {
     public void register(RegisterRequest request) {
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new RuntimeException("Email Already Exists");
+            throw new EmailAlreadyExistsException("Email Already Exists");
         }
 
         User user = User.builder()
@@ -42,7 +44,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Email Not Found"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Password Do Not Match");
+            throw new InvalidCredentialsException("Invalid Credentials");
         }
 
         String token = jwtService.generateToken(user);
