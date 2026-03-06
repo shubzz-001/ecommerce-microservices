@@ -8,6 +8,7 @@ import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -73,5 +74,16 @@ public class OrderService {
         }
 
         return orderResponses;
+    }
+
+    public OrderResponse getOrderById(@Valid Long id) {
+        
+    }
+
+    public List<OrderResponse> getOrdersByUserId(String name) {
+        
+    }
+
+    public OrderResponse cancelOrder(@Valid Long id) {
     }
 }

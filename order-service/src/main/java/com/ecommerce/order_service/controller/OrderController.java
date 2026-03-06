@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -27,9 +28,30 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(orderRequest));
     }
 
-    @GetMapping("/")
-    public ResponseEntity<List<?>> getAllOrders() {   
+    @GetMapping("/")   // Have to make it USer only and Admin only
+    public ResponseEntity<List<?>> getAllOrders() {
         return ResponseEntity.status(HttpStatus.OK).body(orderService.getAllOrders());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponse> getOrderById(
+            @Valid @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(orderService.getOrderById(id));
+    }
+
+    @GetMapping("/my-orders")
+    public ResponseEntity<List<OrderResponse>> getOrdersByUserId(
+            Principal principal
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(orderService.getOrdersByUserId(principal.getName()));
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(
+            @Valid @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(orderService.cancelOrder(id));
     }
 
 }

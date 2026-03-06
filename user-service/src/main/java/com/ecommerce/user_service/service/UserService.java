@@ -4,12 +4,10 @@ import com.ecommerce.user_service.dto.UserDTO;
 import com.ecommerce.user_service.exception.UserNotFoundException;
 import com.ecommerce.user_service.model.User;
 import com.ecommerce.user_service.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
