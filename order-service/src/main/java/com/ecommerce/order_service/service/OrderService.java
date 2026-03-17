@@ -77,13 +77,25 @@ public class OrderService {
     }
 
     public OrderResponse getOrderById(@Valid Long id) {
-        
+        Order order = orderRepository.findById(id).orElse(null);
+
+        if (order != null) {
+            return new OrderResponse(
+                    order.getId(),
+                    order.getProductId(),
+                    order.getQuantity(),
+                    order.getTotalPrice(),
+                    order.getStatus(),
+                    order.getCreatedAt()
+            );
+        } else  {
+            return null;
+        }
     }
 
-    public List<OrderResponse> getOrdersByUserId(String name) {
-        
-    }
+    public String cancelOrder(@Valid Long id) {
+        orderRepository.deleteById(id);
 
-    public OrderResponse cancelOrder(@Valid Long id) {
+        return "Product Deleted Successfully";
     }
 }
