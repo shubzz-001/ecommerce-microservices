@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: api-gateway
+    
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+          - id: product-service
+            uri: lb://PRODUCT-SERVICE
+            predicates:
+            - Path=/products/**
+          - id: order-service
+            uri: lb://ORDER-SERVICE
+            predicates:
+            - Path=/orders/**
+          - id: user-service
+            uri: lb://USER-SERVICE
+            predicates:
+            - Path=/auth/**
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+server:
+  port: 8765
+
+jwt:
+  secret: THIS_IS_SECRET_KEY_FOR_THIS_PROJECT_DONT_STORE_LIKE_THIS_BUDD

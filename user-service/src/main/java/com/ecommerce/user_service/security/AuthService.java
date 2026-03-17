@@ -33,7 +33,7 @@ public class AuthService {
         User user = User.builder()
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(Role.USER)
+                .role(Role.ROLE_USER)
                 .build();
 
         userRepository.save(user);
