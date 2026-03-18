@@ -11,6 +11,7 @@ public record OrderResponse(
         Integer quantity,
         BigDecimal totalPrice,
         OrderStatus status,
+        String userEmail,
         LocalDateTime createdAt
 ) {
 }

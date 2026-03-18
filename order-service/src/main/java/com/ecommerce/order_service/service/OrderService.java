@@ -4,12 +4,15 @@ import com.ecommerce.order_service.client.ProductClient;
 import com.ecommerce.order_service.dto.OrderRequest;
 import com.ecommerce.order_service.dto.OrderResponse;
 import com.ecommerce.order_service.dto.ProductResponse;
+import com.ecommerce.order_service.exception.AccessDeniedException;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,7 +28,7 @@ public class OrderService {
     private final ProductClient productClient;
 
     @Transactional
-    public OrderResponse createOrder(OrderRequest request) {
+    public OrderResponse createOrder(OrderRequest request, String userEmail) {
 
         ProductResponse product = productClient.getProduct(request.productId());
 
@@ -43,6 +46,7 @@ public class OrderService {
                 .quantity(request.quantity())
                 .totalPrice(total)
                 .status(OrderStatus.CREATED)
+                .userEmail(userEmail)
                 .createdAt(LocalDateTime.now())
                 .build();
         Order saved = orderRepository.save(order);
@@ -53,6 +57,7 @@ public class OrderService {
                 saved.getQuantity(),
                 saved.getTotalPrice(),
                 saved.getStatus(),
+                saved.getUserEmail(),
                 saved.getCreatedAt()
         );
     }
@@ -68,6 +73,7 @@ public class OrderService {
                     order.getQuantity(),
                     order.getTotalPrice(),
                     order.getStatus(),
+                    order.getUserEmail(),
                     order.getCreatedAt()
             );
             orderResponses.add(orderResponse);
@@ -76,8 +82,13 @@ public class OrderService {
         return orderResponses;
     }
 
-    public OrderResponse getOrderById(@Valid Long id) {
-        Order order = orderRepository.findById(id).orElse(null);
+    public OrderResponse getOrderById(Long id, String email, String role) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!order.getUserEmail().equals(email) && !role.equals("ROLE_ADMIN")) {
+            throw new AccessDeniedException("You are not allowed to access this order");
+        }
 
         if (order != null) {
             return new OrderResponse(
@@ -86,6 +97,7 @@ public class OrderService {
                     order.getQuantity(),
                     order.getTotalPrice(),
                     order.getStatus(),
+                    order.getUserEmail(),
                     order.getCreatedAt()
             );
         } else  {
@@ -93,9 +105,60 @@ public class OrderService {
         }
     }
 
-    public String cancelOrder(@Valid Long id) {
-        orderRepository.deleteById(id);
+    public OrderResponse cancelOrder(Long id, String email, String role) {
+        Order order = orderRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        if (!order.getUserEmail().equals(email) && !role.equals("ROLE_ADMIN")) {
+            throw new AccessDeniedException("You are not allowed to access this order");
+        }
+
+        if (order.getStatus() == OrderStatus.CANCELED) {
+            throw new RuntimeException("Order already cancelled");
+        }
+        order.setStatus(OrderStatus.CANCELED);
+        Order saved = orderRepository.save(order);
+
+        return new OrderResponse(
+                saved.getId(),
+                saved.getProductId(),
+                saved.getQuantity(),
+                saved.getTotalPrice(),
+                saved.getStatus(),
+                saved.getUserEmail(),
+                saved.getCreatedAt()
+        );
+    }
+
+    public List<OrderResponse> getOrdersByUser(String userEmail) {
+        List<Order> orders = orderRepository.findByUserEmail(userEmail);
+        List<OrderResponse> orderResponses = new ArrayList<>();
+
+        for (Order order : orders) {
+            OrderResponse orderResponse = new OrderResponse(
+                    order.getId(),
+                    order.getProductId(),
+                    order.getQuantity(),
+                    order.getTotalPrice(),
+                    order.getStatus(),
+                    order.getUserEmail(),
+                    order.getCreatedAt()
+            );
+            orderResponses.add(orderResponse);
+        }
+
+        return orderResponses;
+    }
+
+    public String deleteOrder(Long id, String email,  String role) {
+        Order order = orderRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!order.getUserEmail().equals(email) && !role.equals("ROLE_ADMIN")) {
+            throw new AccessDeniedException("You are not allowed to access this order");
+        }
+
+        orderRepository.deleteById(id);
         return "Product Deleted Successfully";
     }
 }
