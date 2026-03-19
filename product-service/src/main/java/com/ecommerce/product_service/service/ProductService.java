@@ -2,10 +2,12 @@ package com.ecommerce.product_service.service;
 
 import com.ecommerce.product_service.dto.ProductRequest;
 import com.ecommerce.product_service.dto.ProductResponse;
+import com.ecommerce.product_service.event.OrderCancelledEvent;
 import com.ecommerce.product_service.exception.ProductNotFoundException;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.repository.ProductRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -122,5 +124,15 @@ public class ProductService {
             throw new RuntimeException("Insufficient stock");
         }
         product.setStock(product.getStock() - quantity);
+    }
+
+    @KafkaListener(topics = "order-cancelled-topic", groupId = "product-group")
+    private void handleOrder(OrderCancelledEvent event) {
+
+        Product product = productRepository.findById(event.productId())
+                .orElseThrow();
+
+        product.setStock(product.getStock() + event.quantity());
+        productRepository.save(product);
     }
 }

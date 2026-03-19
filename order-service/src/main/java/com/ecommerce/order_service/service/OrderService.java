@@ -4,15 +4,14 @@ import com.ecommerce.order_service.client.ProductClient;
 import com.ecommerce.order_service.dto.OrderRequest;
 import com.ecommerce.order_service.dto.OrderResponse;
 import com.ecommerce.order_service.dto.ProductResponse;
+import com.ecommerce.order_service.event.OrderCancelledEvent;
 import com.ecommerce.order_service.exception.AccessDeniedException;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderStatus;
 import com.ecommerce.order_service.repository.OrderRepository;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.jspecify.annotations.Nullable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,6 +25,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductClient productClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest request, String userEmail) {
@@ -90,19 +90,15 @@ public class OrderService {
             throw new AccessDeniedException("You are not allowed to access this order");
         }
 
-        if (order != null) {
-            return new OrderResponse(
-                    order.getId(),
-                    order.getProductId(),
-                    order.getQuantity(),
-                    order.getTotalPrice(),
-                    order.getStatus(),
-                    order.getUserEmail(),
-                    order.getCreatedAt()
-            );
-        } else  {
-            return null;
-        }
+        return new OrderResponse(
+                order.getId(),
+                order.getProductId(),
+                order.getQuantity(),
+                order.getTotalPrice(),
+                order.getStatus(),
+                order.getUserEmail(),
+                order.getCreatedAt()
+        );
     }
 
     public OrderResponse cancelOrder(Long id, String email, String role) {
@@ -116,8 +112,17 @@ public class OrderService {
         if (order.getStatus() == OrderStatus.CANCELED) {
             throw new RuntimeException("Order already cancelled");
         }
+
         order.setStatus(OrderStatus.CANCELED);
         Order saved = orderRepository.save(order);
+
+        kafkaTemplate.send(
+                "order-cancelled-topic",
+                new OrderCancelledEvent(
+                        saved.getProductId(),
+                        saved.getQuantity()
+                )
+        );
 
         return new OrderResponse(
                 saved.getId(),
